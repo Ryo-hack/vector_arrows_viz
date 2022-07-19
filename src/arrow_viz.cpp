@@ -34,23 +34,33 @@ marker_arrow_vector::marker_arrow_vector(){
 };
 
 void marker_arrow_vector::vector_callback(const geometry_msgs ::Vector3 & Vector){
-    
-    radias = sqrtf(pow(Vector.x,2)+pow(Vector.y,2)+pow(Vector.z,2));
-    theta = asin(Vector.y / radias);
-    phi = atan2(Vector.z , Vector.x);
 
+    radias = sqrtf(pow(Vector.x,2)+pow(Vector.y,2)+pow(Vector.z,2));
+    theta = atan2(Vector.y, Vector.x);
+    phi = atan2(Vector.z , sqrtf(pow(Vector.x,2)+pow(Vector.y,2)));
+    
     double roll , pitch,  yaw ;
     roll = 0.0 ;
     pitch =phi;
     yaw = theta;
 
-    quat=tf::createQuaternionFromRPY(roll,pitch,yaw);
-    quaternionTFToMsg(quat, geometry_quat);
+    double cy = cos(yaw * 0.5);
+    double sy = sin(yaw * 0.5);
+    double cp = cos(pitch * 0.5);
+    double sp = sin(pitch * 0.5);
+    double cr = cos(roll * 0.5);
+    double sr = sin(roll * 0.5);
 
-    Quaternion[0]=geometry_quat.x;
-    Quaternion[1]=geometry_quat.y;
-    Quaternion[2]=geometry_quat.z;
-    Quaternion[3]=geometry_quat.w;
+    geometry_msgs::Quaternion q;
+    q.w = cr * cp * cy + sr * sp * sy;
+    q.x = sr * cp * cy - cr * sp * sy;
+    q.y = cr * sp * cy + sr * cp * sy;
+    q.z = cr * cp * sy - sr * sp * cy;
+
+    Quaternion[0]=q.x;
+    Quaternion[1]=q.y;
+    Quaternion[2]=q.z;
+    Quaternion[3]=q.w;
 
 }
 
@@ -58,7 +68,7 @@ void marker_arrow_vector::marker_arrow_pub(){
         visualization_msgs::Marker marker;
         marker.header.frame_id = "map";////parm
         marker.header.stamp = ros::Time::now();
-        marker.ns ="arrow_shapes";
+        marker.ns ="vector";
         marker.id = 0;
 
         marker.action = visualization_msgs::Marker::ADD;
